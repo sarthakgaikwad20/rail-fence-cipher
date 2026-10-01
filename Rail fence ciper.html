@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rail Fence Cipher</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 16px;
+    color: #1e293b;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #ec4899 100%);
+    background-attachment: fixed;
+  }
+  .container {
+    max-width: 850px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    animation: rise 0.6s ease;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(25px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #db2777);
+    color: #fff;
+    text-align: center;
+    padding: 35px 20px;
+  }
+  header .icon { font-size: 42px; margin-bottom: 6px; }
+  header h1 { margin: 0; font-size: 34px; letter-spacing: 1px; }
+  header p { margin: 8px 0 0; opacity: 0.9; font-size: 15px; }
+
+  .content { padding: 28px; }
+
+  label {
+    font-weight: 600;
+    display: block;
+    margin: 18px 0 6px;
+    color: #4338ca;
+  }
+  textarea, input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 2px solid #e0e7ff;
+    border-radius: 12px;
+    background: #f8faff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  textarea:focus, input[type="number"]:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+    background: #fff;
+  }
+  textarea { resize: vertical; }
+
+  .buttons { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  button {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  button:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22); }
+  button:active { transform: translateY(0); }
+  #encBtn   { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  #decBtn   { background: linear-gradient(135deg, #10b981, #059669); }
+  #clearBtn { background: linear-gradient(135deg, #f97316, #ef4444); }
+
+  .error {
+    color: #dc2626;
+    margin-top: 14px;
+    font-weight: 600;
+    min-height: 22px;
+  }
+
+  #output { animation: rise 0.5s ease; }
+
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  h3 { margin: 18px 0 8px; color: #4338ca; }
+  .result-head h3 { margin: 0; }
+  #copyBtn {
+    flex: none;
+    min-width: 0;
+    padding: 7px 16px;
+    font-size: 14px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  }
+  .result {
+    margin-top: 10px;
+    padding: 18px;
+    background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+    border-left: 6px solid #8b5cf6;
+    border-radius: 12px;
+    word-break: break-all;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    font-family: Consolas, "Courier New", monospace;
+    white-space: pre-wrap;
+    color: #3730a3;
+  }
+
+  .grid-wrap {
+    overflow-x: auto;
+    padding: 16px;
+    background: #f8faff;
+    border-radius: 12px;
+    border: 2px dashed #c7d2fe;
+  }
+  table { border-collapse: separate; border-spacing: 4px; margin: auto; }
+  td {
+    width: 38px;
+    height: 38px;
+    text-align: center;
+    border-radius: 8px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 17px;
+    background: #eef2ff;
+  }
+  td.filled {
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    animation: pop 0.4s ease backwards;
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .r0 { background: #3b82f6; }
+  .r1 { background: #ec4899; }
+  .r2 { background: #10b981; }
+  .r3 { background: #f59e0b; }
+  .r4 { background: #8b5cf6; }
+  .r5 { background: #ef4444; }
+  .r6 { background: #14b8a6; }
+  .r7 { background: #f97316; }
+
+  footer {
+    text-align: center;
+    padding: 16px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="icon">🔐</div>
+    <h1>Rail Fence Cipher</h1>
+    <p>Encrypt and decrypt messages with the zig-zag transposition technique</p>
+  </header>
+
+  <div class="content">
+    <label for="text">Enter Text</label>
+    <textarea id="text" rows="3" placeholder="e.g. HELLO WORLD"></textarea>
+
+    <label for="rails">Number of Rails (Key)</label>
+    <input type="number" id="rails" value="3" min="2">
+
+    <div class="buttons">
+      <button id="encBtn" onclick="runCipher('encrypt')">🔒 Encrypt</button>
+      <button id="decBtn" onclick="runCipher('decrypt')">🔓 Decrypt</button>
+      <button id="clearBtn" onclick="clearAll()">✖ Clear</button>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div id="output" style="display:none;">
+      <div class="result-head">
+        <h3 id="resultTitle">Result</h3>
+        <button id="copyBtn" onclick="copyResult()">📋 Copy</button>
+      </div>
+      <div class="result" id="result"></div>
+
+      <h3>Zig-Zag Visualization</h3>
+      <div class="grid-wrap" id="grid"></div>
+    </div>
+  </div>
+
+  <footer>Rail Fence Cipher &bull; Cryptography Project</footer>
+</div>
+
+<script>
+  // Returns the rail number for each character position (zig-zag pattern)
+  function getPattern(length, rails) {
+    const pattern = [];
+    let rail = 0;
+    let direction = 1;
+    for (let i = 0; i < length; i++) {
+      pattern.push(rail);
+      if (rail === 0) direction = 1;
+      else if (rail === rails - 1) direction = -1;
+      rail += direction;
+    }
+    return pattern;
+  }
+
+  function encrypt(text, rails) {
+    const pattern = getPattern(text.length, rails);
+    let result = "";
+    // Read rail by rail, from top to bottom
+    for (let r = 0; r < rails; r++) {
+      for (let i = 0; i < text.length; i++) {
+        if (pattern[i] === r) result += text[i];
+      }
+    }
+    return result;
+  }
+
+  function decrypt(cipher, rails) {
+    const pattern = getPattern(cipher.length, rails);
+    // Positions sorted by rail (the order in which the cipher was read)
+    const positions = [];
+    for (let r = 0; r < rails; r++) {
+      for (let i = 0; i < cipher.length; i++) {
+        if (pattern[i] === r) positions.push(i);
+      }
+    }
+    // Put each cipher letter back into its original position
+    const plain = new Array(cipher.length);
+    positions.forEach((pos, k) => { plain[pos] = cipher[k]; });
+    return plain.join("");
+  }
+
+  function drawGrid(plainText, rails) {
+    const pattern = getPattern(plainText.length, rails);
+    let html = "<table>";
+    for (let r = 0; r < rails; r++) {
+      html += "<tr>";
+      for (let c = 0; c < plainText.length; c++) {
+        if (pattern[c] === r) {
+          const ch = plainText[c] === " " ? "·" : plainText[c];
+          html += `<td class="filled r${r % 8}" style="animation-delay:${c * 40}ms">${ch}</td>`;
+        } else {
+          html += "<td></td>";
+        }
+      }
+      html += "</tr>";
+    }
+    html += "</table>";
+    document.getElementById("grid").innerHTML = html;
+  }
+
+  function runCipher(mode) {
+    const error = document.getElementById("error");
+    const output = document.getElementById("output");
+    error.textContent = "";
+
+    // Uppercase, keep letters, digits and spaces, remove leading/trailing spaces
+    const text = document.getElementById("text").value
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, "")
+      .trim();
+    const rails = parseInt(document.getElementById("rails").value);
+
+    if (!text) {
+      error.textContent = "Please enter some text.";
+      output.style.display = "none";
+      return;
+    }
+    if (isNaN(rails) || rails < 2) {
+      error.textContent = "Number of rails must be 2 or more.";
+      output.style.display = "none";
+      return;
+    }
+    if (rails >= text.length) {
+      error.textContent = "Rails should be less than the text length.";
+      output.style.display = "none";
+      return;
+    }
+
+    let result, plain;
+    if (mode === "encrypt") {
+      result = encrypt(text, rails);
+      plain = text;
+      document.getElementById("resultTitle").textContent = "Ciphertext";
+    } else {
+      result = decrypt(text, rails);
+      plain = result;
+      document.getElementById("resultTitle").textContent = "Plaintext";
+    }
+
+    document.getElementById("result").textContent = result;
+    drawGrid(plain, rails);
+    output.style.display = "block";
+  }
+
+  function copyResult() {
+    const text = document.getElementById("result").textContent;
+    const btn = document.getElementById("copyBtn");
+    const done = () => {
+      btn.textContent = "✔ Copied";
+      setTimeout(() => { btn.textContent = "📋 Copy"; }, 1500);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done);
+    } else {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      document.body.removeChild(t);
+      done();
+    }
+  }
+
+  function clearAll() {
+    document.getElementById("text").value = "";
+    document.getElementById("rails").value = 3;
+    document.getElementById("error").textContent = "";
+    document.getElementById("output").style.display = "none";
+  }
+</script>
+</body>
+</html>
